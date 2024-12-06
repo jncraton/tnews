@@ -4,8 +4,11 @@ import re
 from time import perf_counter
 start = perf_counter()
 
+DEBUG = False
+
 def log(msg):
-    print(f"{perf_counter() - start} {msg}")
+    if DEBUG:
+        print(f"{perf_counter() - start} {msg}")
 
 def get_npr_articles():
     res = requests.get("https://text.npr.org/")
@@ -29,19 +32,21 @@ def get_npr_text(url):
     for t in ["style", "script", "nav", "header", "footer"]:
         html = re.sub(f"<{t}>.*?</{t}>", "", html, flags=re.DOTALL|re.M)
     
+    # Prepend headers with `#` for markdown
+    html = re.sub("<h1.*?>", r"<h1># ", html)
+    html = re.sub("<h2.*?>", r"<h2>## ", html)
+    
     # Grab all paras (and headers)
     paras = re.findall(r"(<p>|<h\d.*?>)(.*?)(</p>|</h\d>)", html)
     
     text = '\n\n'.join(re.sub("<.*?>", "", p[1]) for p in paras)
-    log(f"Extracted article text")    
+    log(f"Extracted article text")
     
     return text
 
 articles = get_npr_articles()
 
 for url, title in articles:
-    print(title, url)
     print(get_npr_text(url))
-    break
-
+    print("\n\n" + "-" * 80 + "\n\n")
     
